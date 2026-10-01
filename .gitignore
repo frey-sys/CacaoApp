@@ -31,7 +31,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# local SQLite database
+backend/data/*.sqlite*
 
 # typescript
 *.tsbuildinfo

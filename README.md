@@ -1,56 +1,43 @@
-# Welcome to your Expo app 👋
+# CacaoApp
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación Expo para gestionar fincas cacaoteras, rutas y registros de calidad mediante una API Express con almacenamiento SQLite en el servidor. Se requiere conexión al backend para iniciar sesión, consultar y guardar datos. Si la API no está disponible, la aplicación muestra el error y no almacena cambios localmente.
 
-## Get started
+## Configuración
 
-1. Install dependencies
+1. Instala las dependencias:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Copia `.env.example` a `.env` y cambia `JWT_SECRET` por una clave aleatoria de al menos 32 caracteres.
 
-   ```bash
-   npx expo start
-   ```
+3. Si ejecutas la aplicación en un teléfono físico, configura `EXPO_PUBLIC_API_URL` en `.env` con la IP local de tu equipo, por ejemplo `http://192.168.1.20:3000/api`. El teléfono y el equipo deben estar en la misma red.
 
-In the output, you'll find options to open the app in a
+La sesión puede permanecer guardada de forma segura en el dispositivo, pero se valida contra el servidor al abrir la aplicación. Los registros y cambios se consultan y escriben únicamente en la API.
+## Ejecución
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Inicia la API y la aplicación en terminales separadas:
 
 ```bash
-npm run reset-project
+npm run server
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+La API crea automáticamente `backend/data/cacaoapp.sqlite` al iniciarse. Comprueba el estado en `http://localhost:3000/api/health`.
 
-### Other setup steps
+## API
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- `POST /api/auth/register` y `POST /api/auth/login`
+- `/api/fincas`: GET, POST, GET por ID, PATCH y DELETE
+- `/api/rutas`: GET, POST, GET por ID, PATCH y DELETE
+- `/api/calidad`: GET, POST, GET por ID, PATCH y DELETE
 
-## Learn more
+Los endpoints de fincas, rutas y calidad requieren `Authorization: Bearer <token>`. Cada usuario solo puede consultar y modificar sus propios registros. Las rutas y los registros de calidad se relacionan con fincas mediante `fincaId`.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Validación
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm run lint
+npx tsc --noEmit
+```
