@@ -6,6 +6,7 @@ import {
   type Ruta,
 } from '@/services/api';
 import { clearSession, loadSession, saveSession } from '@/services/sessionStore';
+import { UrbanMap } from '@/components/urban-map';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -38,10 +39,6 @@ function IconLeaf({ size = 24 }: { size?: number }) {
 
 function IconPin({ size = 24 }: { size?: number }) {
   return <Text style={{ fontSize: size }}>📍</Text>;
-}
-
-function IconMap({ size = 24 }: { size?: number }) {
-  return <Text style={{ fontSize: size }}>🗺️</Text>;
 }
 
 function IconRoad({ size = 28 }: { size?: number }) {
@@ -237,131 +234,6 @@ function EstadoFermentacion({
       >
         {item.label}
       </Text>
-    </View>
-  );
-}
-
-/* ============================================================
-   MAPA SIMULADO NATIVO
-   ============================================================ */
-
-function MapaSimulado({ fincas }: { fincas: Finca[] }) {
-  const [selected, setSelected] = useState<Finca | null>(null);
-
-  return (
-    <View style={styles.mapContainer}>
-      <View style={styles.mapBackground}>
-        {/* Calles horizontales */}
-        {[45, 90, 135, 180, 225, 270, 315].map((top) => (
-          <View
-            key={`h-${top}`}
-            style={[
-              styles.mapStreetHorizontal,
-              { top },
-            ]}
-          />
-        ))}
-
-        {/* Calles verticales */}
-        {[45, 95, 145, 195, 245, 295].map((left) => (
-          <View
-            key={`v-${left}`}
-            style={[
-              styles.mapStreetVertical,
-              { left },
-            ]}
-          />
-        ))}
-
-        {/* Río */}
-        <View style={styles.river} />
-
-        <Text style={styles.mapCity}>Chigorodó</Text>
-        <Text style={styles.mapRiverText}>Río Chigorodó</Text>
-
-        {/* Fincas */}
-        {fincas.map((finca, index) => {
-          const left = 45 + index * 95;
-          const top = 115 + index * 55;
-
-          return (
-            <Pressable
-              key={finca.id}
-              onPress={() =>
-                setSelected(
-                  selected?.id === finca.id ? null : finca,
-                )
-              }
-              style={[
-                styles.mapMarker,
-                {
-                  left,
-                  top,
-                },
-              ]}
-            >
-              <Text style={styles.markerText}>🌱</Text>
-            </Pressable>
-          );
-        })}
-
-        {/* Acopio */}
-        <View style={styles.acopioMarker}>
-          <Text style={styles.acopioLetter}>A</Text>
-        </View>
-
-        <Text style={styles.acopioText}>Acopio</Text>
-
-        {/* Controles */}
-        <View style={styles.zoomControls}>
-          <Pressable style={styles.zoomButton}>
-            <Text style={styles.zoomText}>+</Text>
-          </Pressable>
-
-          <Pressable style={styles.zoomButton}>
-            <Text style={styles.zoomText}>−</Text>
-          </Pressable>
-        </View>
-
-        {/* Popup */}
-        {selected && (
-          <View style={styles.mapPopup}>
-            <Pressable
-              onPress={() => setSelected(null)}
-              style={styles.popupClose}
-            >
-              <Text style={styles.popupCloseText}>×</Text>
-            </Pressable>
-
-            <View style={styles.row}>
-              <IconLeaf size={18} />
-              <Text style={styles.popupTitle}>
-                {selected.nombre}
-              </Text>
-            </View>
-
-            <Text style={styles.popupText}>
-              Lat: {selected.lat}
-            </Text>
-
-            <Text style={styles.popupText}>
-              Long: {selected.lng}
-            </Text>
-
-            <View style={styles.popupDivider} />
-
-            <Text style={styles.popupSmall}>
-              🛣️ 1 ruta registrada
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.legend}>
-        <Text style={styles.legendText}>🟦 Finca</Text>
-        <Text style={styles.legendText}>🔴 Acopio</Text>
-        <Text style={styles.legendText}>🟠 Ruta</Text>
-      </View>
     </View>
   );
 }
@@ -1633,7 +1505,14 @@ export default function App() {
             styles.scrollContent
           }
         >
-          <MapaSimulado fincas={fincas} />
+          <View style={styles.mapContainer}>
+            <UrbanMap fincas={fincas} />
+          </View>
+
+          <Text style={styles.mapFooter}>
+            Plano urbano de Chigorodó con vías, barrios y puntos de interés según
+            los datos disponibles en OpenStreetMap.
+          </Text>
 
           <Text style={styles.sectionHeading}>
             Fincas en el mapa
@@ -1661,28 +1540,6 @@ export default function App() {
             </View>
           ))}
 
-          <View style={styles.acopioCard}>
-            <View style={styles.acopioCircle}>
-              <Text style={styles.acopioLetter}>
-                A
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.mapListName}>
-                Punto de Acopio
-              </Text>
-
-              <Text style={styles.mapListCoords}>
-                Chigorodó, Antioquia
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.mapFooter}>
-            Mapa de referencia · Próximamente mapa
-            real
-          </Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -3129,193 +2986,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F4E8',
   },
 
-  mapBackground: {
-    flex: 1,
-    backgroundColor: '#E8F0E8',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-
-  mapStreetHorizontal: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 5,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.8,
-  },
-
-  mapStreetVertical: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 5,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.8,
-  },
-
-  river: {
-    position: 'absolute',
-    top: 48,
-    left: -20,
-    width: '120%',
-    height: 13,
-    backgroundColor: '#7EC8E3',
-    transform: [{ rotate: '3deg' }],
-    opacity: 0.6,
-  },
-
-  mapCity: {
-    position: 'absolute',
-    top: 10,
-    left: 20,
-    color: '#555555',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-
-  mapRiverText: {
-    position: 'absolute',
-    top: 22,
-    left: '38%',
-    color: '#5F9272',
-    fontSize: 9,
-    fontStyle: 'italic',
-  },
-
-  mapMarker: {
-    position: 'absolute',
-    width: 35,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: '#1565C0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  markerText: {
-    fontSize: 16,
-  },
-
-  acopioMarker: {
-    position: 'absolute',
-    left: '48%',
-    top: '48%',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#E53935',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  acopioLetter: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-
-  acopioText: {
-    position: 'absolute',
-    left: '55%',
-    top: '46%',
-    color: '#C62828',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-
-  zoomControls: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-  },
-
-  zoomButton: {
-    width: 30,
-    height: 30,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-
-  zoomText: {
-    fontSize: 20,
-    color: '#333333',
-    fontWeight: '700',
-  },
-
-  mapPopup: {
-    position: 'absolute',
-    top: 12,
-    right: 10,
-    width: 180,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    elevation: 5,
-    shadowColor: '#000000',
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-  },
-
-  popupClose: {
-    position: 'absolute',
-    right: 5,
-    top: 2,
-    padding: 3,
-  },
-
-  popupCloseText: {
-    color: '#999999',
-    fontSize: 21,
-  },
-
-  popupTitle: {
-    color: COLORS.green,
-    fontWeight: '700',
-    fontSize: 13,
-    marginLeft: 4,
-    paddingRight: 15,
-  },
-
-  popupText: {
-    color: '#666666',
-    fontSize: 10,
-    marginTop: 3,
-  },
-
-  popupDivider: {
-    height: 1,
-    backgroundColor: '#EEEEEE',
-    marginVertical: 7,
-  },
-
-  popupSmall: {
-    color: '#666666',
-    fontSize: 10,
-  },
-
-  legend: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 7,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    flexDirection: 'row',
-    gap: 10,
-  },
-
-  legendText: {
-    color: '#666666',
-    fontSize: 10,
-  },
-
   mapListCard: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -3348,32 +3018,13 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  acopioCard: {
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 11,
-    padding: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    marginTop: 4,
-  },
-
-  acopioCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
   mapFooter: {
     textAlign: 'center',
-    color: '#AAAAAA',
-    fontSize: 10,
+    color: '#666666',
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 15,
+    marginBottom: 12,
   },
 
   /* RUTAS */

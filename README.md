@@ -15,6 +15,8 @@ Aplicación Expo para gestionar fincas cacaoteras, rutas y registros de calidad 
 3. Si ejecutas la aplicación en un teléfono físico, configura `EXPO_PUBLIC_API_URL` en `.env` con la IP local de tu equipo, por ejemplo `http://192.168.1.20:3000/api`. El teléfono y el equipo deben estar en la misma red.
 
 La sesión puede permanecer guardada de forma segura en el dispositivo, pero se valida contra el servidor al abrir la aplicación. Los registros y cambios se consultan y escriben únicamente en la API.
+
+El apartado **Mapa** muestra el plano urbano de Chigorodó con calles, barrios y puntos de interés de OpenStreetMap, además de las fincas registradas. El mapa base requiere conexión a internet; la atribución a OpenStreetMap aparece en el propio mapa.
 ## Ejecución
 
 Inicia la API y la aplicación en terminales separadas:

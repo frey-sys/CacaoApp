@@ -387,7 +387,7 @@ app.post('/api/calidad', (req, res) => {
   const result = db.prepare(`
     INSERT INTO registros_calidad (
       usuario_id, finca_id, fecha, humedad, fermentacion, temperatura, observaciones, estado
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     req.userId,
     record.fincaId,
