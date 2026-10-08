@@ -69,6 +69,14 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_fincas_usuario_id
+    ON fincas (usuario_id, id DESC);
+  CREATE INDEX IF NOT EXISTS idx_rutas_usuario_id
+    ON rutas (usuario_id, id DESC);
+  CREATE INDEX IF NOT EXISTS idx_calidad_usuario_id
+    ON registros_calidad (usuario_id, id DESC);
+`);
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -188,6 +196,12 @@ const selectRoutes = db.prepare(`
   WHERE r.usuario_id = ?
   ORDER BY r.id DESC
 `);
+const selectRouteById = db.prepare(`
+  SELECT r.*, f.nombre AS finca
+  FROM rutas r
+  JOIN fincas f ON f.id = r.finca_id
+  WHERE r.usuario_id = ? AND r.id = ?
+`);
 const selectQualityRecords = db.prepare(`
   SELECT q.*, f.nombre AS finca
   FROM registros_calidad q
@@ -195,6 +209,15 @@ const selectQualityRecords = db.prepare(`
   WHERE q.usuario_id = ?
   ORDER BY q.id DESC
 `);
+const selectQualityRecordById = db.prepare(`
+  SELECT q.*, f.nombre AS finca
+  FROM registros_calidad q
+  JOIN fincas f ON f.id = q.finca_id
+  WHERE q.usuario_id = ? AND q.id = ?
+`);
+const selectFincas = db.prepare(
+  'SELECT * FROM fincas WHERE usuario_id = ? ORDER BY id DESC',
+);
 
 function requireOwnedFinca(userId, fincaId) {
   const finca = db
@@ -291,8 +314,7 @@ app.post('/api/auth/login', asyncRoute(async (req, res) => {
 
 app.use('/api/fincas', authenticate);
 app.get('/api/fincas', (req, res) => {
-  const rows = db.prepare('SELECT * FROM fincas WHERE usuario_id = ? ORDER BY id DESC')
-    .all(req.userId);
+  const rows = selectFincas.all(req.userId);
   res.json(rows.map(fincaResponse));
 });
 app.get('/api/fincas/:id', (req, res) => {
@@ -330,9 +352,7 @@ app.get('/api/rutas', (req, res) => {
   res.json(selectRoutes.all(req.userId).map(routeResponse));
 });
 app.get('/api/rutas/:id', (req, res) => {
-  const row = selectRoutes.all(req.userId).find(
-    (route) => route.id === positiveId(req.params.id),
-  );
+  const row = selectRouteById.get(req.userId, positiveId(req.params.id));
   if (!row) throw new HttpError(404, 'No se encontró la ruta.');
   res.json(routeResponse(row));
 });
@@ -344,12 +364,12 @@ app.post('/api/rutas', (req, res) => {
     VALUES (?, ?, ?, ?)
   `).run(req.userId, route.fincaId, route.nombre, route.puntos);
   res.status(201).json(
-    routeResponse(selectRoutes.all(req.userId).find((item) => item.id === result.lastInsertRowid)),
+    routeResponse(selectRouteById.get(req.userId, result.lastInsertRowid)),
   );
 });
 app.patch('/api/rutas/:id', (req, res) => {
   const id = positiveId(req.params.id);
-  const current = selectRoutes.all(req.userId).find((route) => route.id === id);
+  const current = selectRouteById.get(req.userId, id);
   if (!current) throw new HttpError(404, 'No se encontró la ruta.');
   const route = parseRoute(req.body, {
     nombre: current.nombre,
@@ -361,7 +381,7 @@ app.patch('/api/rutas/:id', (req, res) => {
     UPDATE rutas SET nombre = ?, finca_id = ?, puntos = ?
     WHERE id = ? AND usuario_id = ?
   `).run(route.nombre, route.fincaId, route.puntos, id, req.userId);
-  res.json(routeResponse(selectRoutes.all(req.userId).find((item) => item.id === id)));
+  res.json(routeResponse(selectRouteById.get(req.userId, id)));
 });
 app.delete('/api/rutas/:id', (req, res) => {
   const result = db.prepare('DELETE FROM rutas WHERE id = ? AND usuario_id = ?')
@@ -375,9 +395,7 @@ app.get('/api/calidad', (req, res) => {
   res.json(selectQualityRecords.all(req.userId).map(qualityResponse));
 });
 app.get('/api/calidad/:id', (req, res) => {
-  const row = selectQualityRecords.all(req.userId).find(
-    (record) => record.id === positiveId(req.params.id),
-  );
+  const row = selectQualityRecordById.get(req.userId, positiveId(req.params.id));
   if (!row) throw new HttpError(404, 'No se encontró el registro de calidad.');
   res.json(qualityResponse(row));
 });
@@ -399,14 +417,12 @@ app.post('/api/calidad', (req, res) => {
     record.estado,
   );
   res.status(201).json(
-    qualityResponse(
-      selectQualityRecords.all(req.userId).find((item) => item.id === result.lastInsertRowid),
-    ),
+    qualityResponse(selectQualityRecordById.get(req.userId, result.lastInsertRowid)),
   );
 });
 app.patch('/api/calidad/:id', (req, res) => {
   const id = positiveId(req.params.id);
-  const current = selectQualityRecords.all(req.userId).find((record) => record.id === id);
+  const current = selectQualityRecordById.get(req.userId, id);
   if (!current) throw new HttpError(404, 'No se encontró el registro de calidad.');
   const record = parseQuality(req.body, {
     fincaId: current.finca_id,
@@ -435,7 +451,7 @@ app.patch('/api/calidad/:id', (req, res) => {
     req.userId,
   );
   res.json(
-    qualityResponse(selectQualityRecords.all(req.userId).find((item) => item.id === id)),
+    qualityResponse(selectQualityRecordById.get(req.userId, id)),
   );
 });
 app.delete('/api/calidad/:id', (req, res) => {
